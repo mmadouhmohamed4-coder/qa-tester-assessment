@@ -58,16 +58,42 @@
       "request": {
         "method": "GET",
         "header": [
-          { "key": "Authorization", "value": "Bearer PASTE_TOKEN_HERE" }
         ],
         "url": {
-          "raw": "https://api.example.com/api/users/me",
+          "raw": "{{base_url}}/api/users/me"
           "protocol": "https",
           "host": ["api", "example", "com"],
           "path": ["api", "users", "me"]
         },
         "description": "TODO (candidate): remove hard-coded Authorization header — handle it at the collection level. Assert that returned user_id matches the logged-in user. Capture user_id into {{user_id}} for downstream requests."
       },
+      "event": [
+{
+"listen": "test",
+"script": {
+"type": "text/javascript",
+"exec": [
+
+"pm.test('Status code is 200', function () {",
+"    pm.response.to.have.status(200);",
+"});",
+
+"pm.test('Response time less than 1500ms', function () {",
+"    pm.expect(pm.response.responseTime).to.be.below(1500);",
+"});",
+
+"const response = pm.response.json();",
+
+"pm.test('User id exists', function () {",
+"    pm.expect(response.user.id).to.not.be.undefined;",
+"});",
+
+"pm.environment.set('user_id', response.user.id);"
+
+]
+}
+}
+],
       "response": []
     },
     {

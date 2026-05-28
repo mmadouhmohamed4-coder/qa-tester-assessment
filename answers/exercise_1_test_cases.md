@@ -359,6 +359,180 @@
   - Request rejected
   - No database error exposed
   - No unauthorized room access occurs
-
 - **Why it matters:**
   Protects the endpoint from injection and data leakage.
+### TC-17: Reject malformed JSON request body
+
+- **Category:** Negative / Security
+- **Priority:** P1
+
+- **Preconditions:**
+  - User authenticated
+
+- **Steps:**
+  1. Send request with broken or malformed JSON body
+
+- **Expected Result:**
+  - Response status = 400
+  - Clear error message returned
+  - No wallet deduction occurs
+
+- **Why it matters:**
+  Ensures the API handles invalid payloads safely.
+
+---
+
+### TC-18: Reject unsupported or inactive gift_id
+
+- **Category:** Validation
+- **Priority:** P1
+
+- **Preconditions:**
+  - User authenticated
+  - Gift is inactive or does not exist
+
+- **Steps:**
+  1. Send request using invalid `gift_id`
+
+- **Expected Result:**
+  - Request rejected
+  - No coins deducted
+  - No websocket event sent
+
+- **Why it matters:**
+  Prevents using deleted or disabled gifts.
+
+---
+
+### TC-19: Verify exact total cost calculation
+
+- **Category:** Business Logic & Money
+- **Priority:** P0
+
+- **Preconditions:**
+  - Gift price = 100 coins
+  - Quantity = 10
+  - User balance = 1500 coins
+
+- **Steps:**
+  1. Send valid gift request
+
+- **Expected Result:**
+  - Total cost calculated as 1000 coins
+  - Remaining balance becomes 500 coins
+  - No rounding or calculation error occurs
+
+- **Why it matters:**
+  Prevents financial calculation defects.
+
+---
+
+### TC-20: Verify winner rewards are distributed correctly
+
+- **Category:** Business Logic & Money
+- **Priority:** P0
+
+- **Preconditions:**
+  - Gift total reward amount is known
+  - winners_count = 5
+
+- **Steps:**
+  1. Send valid gift request
+  2. Check each winner wallet balance
+
+- **Expected Result:**
+  - All selected winners receive correct reward amount
+  - Total awarded amount matches expected gift reward rules
+  - No extra user receives coins
+
+- **Why it matters:**
+  Ensures reward distribution integrity.
+
+---
+
+### TC-21: Prevent duplicate winner selection in same request
+
+- **Category:** Business Logic & Money
+- **Priority:** P1
+
+- **Preconditions:**
+  - Room has enough eligible viewers
+
+- **Steps:**
+  1. Send request with `winners_count = 5`
+  2. Review returned winners list
+
+- **Expected Result:**
+  - Each winner appears only once
+  - Winners count equals requested count
+
+- **Why it matters:**
+  Prevents one user receiving multiple rewards from the same gift.
+
+---
+
+### TC-22: Verify full rollback when winner credit fails
+
+- **Category:** Transaction / Rollback
+- **Priority:** P0
+
+- **Preconditions:**
+  - Sender has sufficient balance
+  - Simulate failure while crediting winner wallet
+
+- **Steps:**
+  1. Send valid gift request
+  2. Force or mock failure during winner reward update
+
+- **Expected Result:**
+  - Entire transaction is rolled back
+  - Sender balance is restored
+  - No partial winner rewards remain
+  - No websocket event is sent
+
+- **Why it matters:**
+  Prevents inconsistent money state across wallets.
+
+---
+
+### TC-23: Handle mobile retry after timeout
+
+- **Category:** Idempotency / Reliability
+- **Priority:** P0
+
+- **Preconditions:**
+  - First request succeeds on server but client times out
+  - Same idempotency_key is reused
+
+- **Steps:**
+  1. Send valid request
+  2. Simulate client timeout
+  3. Retry same request with same idempotency_key
+
+- **Expected Result:**
+  - Same original transaction result is returned
+  - Coins are deducted once only
+  - Winners list stays the same
+
+- **Why it matters:**
+  Protects users from double charging during network issues.
+
+---
+
+### TC-24: Verify audit log is created for successful gift transaction
+
+- **Category:** Audit / Observability
+- **Priority:** P2
+
+- **Preconditions:**
+  - User sends valid gift successfully
+
+- **Steps:**
+  1. Complete successful gift request
+  2. Check transaction/audit logs
+
+- **Expected Result:**
+  - Audit log contains sender_id, room_id, gift_id, quantity, total_cost, winners, timestamp, and transaction_id
+
+- **Why it matters:**
+  Helps investigation, reconciliation, and fraud analysis.

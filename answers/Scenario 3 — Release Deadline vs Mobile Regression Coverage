@@ -1,0 +1,89 @@
+Scenario 3 — Release Deadline vs Mobile Regression Coverage
+
+1. Recommendation to the CEO
+
+I would say:
+
+“We can ship PartyChat in 9 days, but I do not recommend doing a full regression for every flavor before this release. A full regression takes 3 days and gives us less time to fix issues found late. My recommendation is to do a risk-based regression: full regression for PartyChat, plus the top 5 highest-revenue flavors, and a small cross-flavor smoke test for the rest.”
+
+“This does not mean we are ignoring risk. It means we are testing the areas most likely to break and most costly if they break: login, payment, wallet, send gift, live stream, push notifications, and white-label branding/configuration. I would also add strong monitoring for the first 72 hours after launch with clear rollback triggers.”
+
+2. Risk-based prioritization
+
+I would decide which flavors to fully regress based on:
+
+1. Revenue impact.
+2. Active user count.
+3. Country/payment provider differences.
+4. Recent code changes affecting that flavor.
+5. History of bugs in that flavor.
+6. Similarity to PartyChat configuration.
+7. Marketing or legal commitments.
+
+PartyChat gets full regression because it is the release target. Top 5 revenue flavors also get full regression because impact is highest. Remaining flavors get focused smoke testing.
+
+3. Smallest test set for 80% confidence
+
+For every flavor, I would run this minimum smoke set:
+
+1. App opens with correct flavor branding.
+2. Login and logout.
+3. OTP/auth happy path if applicable.
+4. Home screen loads.
+5. Join live room.
+6. Video stream loads.
+7. Send chat message.
+8. Send gift.
+9. Wallet balance updates after gift.
+10. Payment/top-up entry point opens.
+11. Push notification basic check.
+12. Ban/report user action if available.
+13. Deep link opens correct screen.
+14. App does not crash on background/foreground.
+15. Basic language/country configuration check.
+
+For PartyChat and top 5 flavors, I would add deeper payment, wallet, gift, and negative testing.
+
+4. First automation seed
+
+The first Flutter automation I would write is an integration test for:
+
+Launch app → login → join room → verify live room screen loads.
+
+Reason: this covers the most important user journey and will be reused across every flavor in the future. It also gives fast confidence that flavor configuration, auth, and navigation are not broken.
+
+5. Post-launch monitoring
+
+For the first 72 hours, I would monitor:
+
+* Crash-free sessions.
+* Login failure rate.
+* Payment/top-up failure rate.
+* Send gift failure rate.
+* Wallet balance complaints.
+* Stream join failures.
+* App Store / Play Store reviews.
+* Support tickets by category.
+* Country-specific errors.
+* Backend 4xx/5xx spikes for PartyChat.
+
+Rollback trigger:
+
+* Critical crash affecting launch flow.
+* Payment or wallet defect.
+* Users charged incorrectly.
+* Stream join failure above agreed threshold.
+* Severe country-specific outage.
+
+6. If CEO says “regress everything”
+
+I would ask for one of these in exchange:
+
+1. More testers temporarily.
+2. Reduce scope of the release.
+3. Move the launch date.
+4. Accept that bug-fix buffer will be smaller.
+5. Approve overtime/weekend coverage.
+6. Freeze non-critical code changes immediately.
+
+I would be clear that “regress everything with no extra time or people” increases risk because we may find bugs too late and have no time to fix them properly.

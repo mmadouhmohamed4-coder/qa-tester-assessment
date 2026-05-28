@@ -94,3 +94,138 @@
 
 - **Why it matters:**
   Prevents impossible reward distribution.
+## Authentication & Authorization
+
+### TC-05: Reject request with invalid bearer token
+
+- **Category:** Authentication & Authorization
+- **Priority:** P0
+
+- **Preconditions:**
+  - Invalid bearer token used
+
+- **Steps:**
+  1. Send POST request using invalid token
+
+- **Expected Result:**
+  - Response status = 401
+  - Unauthorized error returned
+  - No wallet deduction occurs
+
+- **Why it matters:**
+  Prevents unauthorized money transfer.
+
+---
+
+### TC-06: Reject request when user is not joined to the room
+
+- **Category:** Authentication & Authorization
+- **Priority:** P0
+
+- **Preconditions:**
+  - User authenticated
+  - User is not joined to target room
+
+- **Steps:**
+  1. Send request using valid room_id user did not join
+
+- **Expected Result:**
+  - Request rejected
+  - No winners selected
+  - No coins deducted
+
+- **Why it matters:**
+  Prevents abusing room APIs.
+
+---
+
+## Concurrency / Race Conditions
+
+### TC-07: Parallel requests with insufficient balance for both
+
+- **Category:** Concurrency / Race Conditions
+- **Priority:** P0
+
+- **Preconditions:**
+  - Wallet balance only covers one request
+  - Two identical requests prepared
+
+- **Steps:**
+  1. Send two requests simultaneously
+  2. Each request deducts full remaining balance
+
+- **Expected Result:**
+  - Only one request succeeds
+  - Second request fails gracefully
+  - Wallet balance never becomes negative
+
+- **Why it matters:**
+  Prevents double-spending race conditions.
+
+---
+
+### TC-08: Concurrent requests using same idempotency_key
+
+- **Category:** Concurrency / Race Conditions
+- **Priority:** P0
+
+- **Preconditions:**
+  - Same authenticated user
+  - Same idempotency_key
+
+- **Steps:**
+  1. Send two requests simultaneously with same key
+
+- **Expected Result:**
+  - Only one transaction created
+  - Coins deducted once only
+  - Duplicate request returns cached/replayed response
+
+- **Why it matters:**
+  Prevents duplicate payments caused by retries.
+
+---
+
+## Idempotency
+
+### TC-09: Retry same request after successful response
+
+- **Category:** Idempotency
+- **Priority:** P0
+
+- **Preconditions:**
+  - First request already completed successfully
+
+- **Steps:**
+  1. Resend identical request with same idempotency_key
+
+- **Expected Result:**
+  - Existing transaction returned
+  - No additional wallet deduction
+  - Winners list unchanged
+
+- **Why it matters:**
+  Prevents duplicated charges from mobile retry behavior.
+
+---
+
+## Business Logic & Money
+
+### TC-10: Reject request when wallet balance is insufficient
+
+- **Category:** Business Logic & Money
+- **Priority:** P0
+
+- **Preconditions:**
+  - Wallet balance less than required amount
+
+- **Steps:**
+  1. Send request exceeding available balance
+
+- **Expected Result:**
+  - Request rejected
+  - No partial deduction occurs
+  - Transaction rolled back fully
+
+- **Why it matters:**
+  Protects wallet integrity.

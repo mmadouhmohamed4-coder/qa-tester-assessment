@@ -229,3 +229,136 @@
 
 - **Why it matters:**
   Protects wallet integrity.
+### TC-11: Reject request when room is empty
+
+- **Category:** Business Logic & Money
+- **Priority:** P1
+
+- **Preconditions:**
+  - User authenticated
+  - Room has no eligible viewers
+
+- **Steps:**
+  1. Send request with valid gift and valid balance
+  2. Set `winners_count = 1`
+
+- **Expected Result:**
+  - Request rejected
+  - No coins deducted
+  - No winners returned
+
+- **Why it matters:**
+  Prevents charging users when rewards cannot be distributed.
+
+---
+
+### TC-12: Ensure sender is not selected as winner
+
+- **Category:** Business Logic & Money
+- **Priority:** P1
+
+- **Preconditions:**
+  - Sender is inside the room
+  - Room has other eligible viewers
+
+- **Steps:**
+  1. Send valid gift request
+  2. Review returned winners list
+
+- **Expected Result:**
+  - Sender user_id is not included in winners
+  - Coins are awarded only to eligible viewers
+
+- **Why it matters:**
+  Prevents self-reward abuse.
+
+---
+
+## Side Effects
+
+### TC-13: WebSocket event is broadcast only after successful transaction
+
+- **Category:** Side Effects
+- **Priority:** P1
+
+- **Preconditions:**
+  - User has sufficient balance
+  - Room has eligible viewers
+
+- **Steps:**
+  1. Send valid gift request
+  2. Listen to room websocket channel
+
+- **Expected Result:**
+  - `gift.sent` event is broadcast once
+  - Event contains correct transaction_id, sender, gift, and winners
+  - Event is not sent before DB transaction commits
+
+- **Why it matters:**
+  Prevents users seeing fake gift events when transaction fails.
+
+---
+
+### TC-14: No websocket event when transaction fails
+
+- **Category:** Side Effects
+- **Priority:** P1
+
+- **Preconditions:**
+  - User has insufficient balance
+
+- **Steps:**
+  1. Send gift request exceeding wallet balance
+  2. Listen to websocket events
+
+- **Expected Result:**
+  - Request fails
+  - No `gift.sent` event is broadcast
+  - No wallet or winner balance changes occur
+
+- **Why it matters:**
+  Ensures rollback also prevents incorrect real-time notifications.
+
+---
+
+## Negative / Security
+
+### TC-15: Reject negative quantity value
+
+- **Category:** Negative / Security
+- **Priority:** P0
+
+- **Preconditions:**
+  - User authenticated
+
+- **Steps:**
+  1. Send request with `quantity = -1`
+
+- **Expected Result:**
+  - Response status = 422
+  - Validation error returned
+  - No wallet update occurs
+
+- **Why it matters:**
+  Prevents balance manipulation using negative values.
+
+---
+
+### TC-16: Reject SQL injection attempt in room_id
+
+- **Category:** Negative / Security
+- **Priority:** P1
+
+- **Preconditions:**
+  - User authenticated
+
+- **Steps:**
+  1. Send request with `room_id = "12345 OR 1=1"`
+
+- **Expected Result:**
+  - Request rejected
+  - No database error exposed
+  - No unauthorized room access occurs
+
+- **Why it matters:**
+  Protects the endpoint from injection and data leakage.

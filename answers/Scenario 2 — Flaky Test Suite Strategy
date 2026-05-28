@@ -1,0 +1,68 @@
+Scenario 2 — Flaky Test Suite Strategy
+
+1. Triage
+
+I would investigate flaky tests in this order:
+
+1. Tests around wallet, payments, gifts, auth, and permissions.
+2. Tests that failed more than once in the last 7 days.
+3. Tests that previously missed a real production bug.
+4. Slow Selenium tests that fail due to timing or environment issues.
+5. Tests blocking releases frequently.
+
+I would not treat all flaky tests equally. A flaky wallet test is more dangerous than a flaky UI label test.
+
+2. Quarantine policy
+
+Yes, I would quarantine flaky tests, but only with rules:
+
+* Quarantine is temporary, maximum 7 days.
+* Each quarantined test must have an owner.
+* A Jira ticket must be created with failure examples and logs.
+* Critical flows cannot be silently muted. If a critical test is flaky, I would replace it with a more reliable lower-level API/PHPUnit test until fixed.
+
+3. Common root causes and fixes
+
+1. Hard waits in Selenium
+    * Fix: replace Thread.sleep with explicit waits for specific conditions.
+2. Shared test data
+    * Fix: create isolated data per test using factories or unique IDs.
+3. Tests depending on execution order
+    * Fix: make each test independent and reset state between tests.
+4. Async UI updates not handled
+    * Fix: wait for API completion, toast messages, table update, or stable DOM state.
+5. External services or unstable test environment
+    * Fix: mock external APIs and stabilize test DB/cache setup.
+
+4. Wallet test post-mortem
+
+The wallet regression test failed culturally before it failed technically. Because it was flaky for two weeks, the team stopped trusting it, so when it passed CI, nobody trusted the signal either.
+
+My process change:
+
+* Any flaky test in a critical area gets fixed or replaced within 48 hours.
+* Critical flaky tests cannot stay in the main suite without an owner.
+* CI reports must separate real failures from quarantined flaky tests.
+* Re-running CI without investigation should require a short comment explaining the suspected cause.
+
+5. CI time reduction
+
+To reduce the 22-minute CI without dropping coverage:
+
+* Move most Selenium tests to nightly regression.
+* Keep only 3–5 critical UI smoke tests on PR.
+* Shift business logic coverage from Selenium to PHPUnit/API tests.
+* Run PHPUnit tests in parallel.
+* Split Newman collection by folder and run critical flows first.
+* Use selective test execution based on changed files where possible.
+
+Target:
+
+* PR suite: under 10 minutes.
+* Nightly suite: full coverage allowed to be longer.
+
+6. Cultural fix
+
+I would stop the “just rerun” habit by making flaky failures visible and owned. Every flaky failure should have a label, owner, and decision: fix, quarantine, or delete.
+
+I would also share a weekly flake report showing top flaky tests, lost CI time, and affected releases. Developers usually change behavior when they see that flaky tests are not just QA noise but wasted engineering time and production risk.

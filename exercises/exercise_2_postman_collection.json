@@ -26,7 +26,7 @@
         "description": "TODO (candidate): replace hard-coded URL/body with env vars. Capture the returned bearer token into {{auth_token}}. Add assertions for status, response schema, and that 'token' is non-empty."
       },
       "event": [
-  {
+        {
     "listen": "test",
     "script": {
       "type": "text/javascript",

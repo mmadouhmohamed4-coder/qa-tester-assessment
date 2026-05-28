@@ -1,0 +1,77 @@
+Scenario 1 — Automation Strategy
+
+Week 1–2: First thing I build
+
+My first deliverable is not automation for all routes. I would first build a risk map + API inventory from routes/api.php, grouped by business impact: auth, wallet, payments, gifts, chat, moderation, and white-label configuration.
+
+In parallel, I would create a small but stable smoke API collection covering the highest-risk flows:
+
+1. Login
+2. Get current user
+3. Check wallet balance
+4. Join room
+5. Send gift
+6. Verify wallet deduction
+7. Verify recipient/audience reward
+8. Payment webhook happy path using mocked provider payload
+
+I would explicitly not try to automate all 400 endpoints in the first two weeks. That would create shallow tests with low trust. I would also not start with Selenium or UI tests because the highest risk is backend money, auth, and webhooks.
+
+Week 3–6: Roll-out plan
+
+I would prioritize automation using this order:
+
+1. Money flows: wallet balance, gift sending, payment top-up, refunds, failed payment.
+2. Auth and authorization: login, token expiry, role access, white-label restrictions.
+3. Payment webhooks: valid webhook, duplicate webhook, invalid signature, delayed callback.
+4. Concurrency-sensitive flows: sending gifts twice, wallet deduction race conditions.
+5. Core live-app flows: join room, chat permission, ban user, send gift.
+6. White-label configuration: feature flags, country/payment provider differences.
+
+I would not prioritize low-risk CRUD endpoints first unless they are used by the critical flows.
+
+Week 7–8: CI and gating policy
+
+By week 8, I would add tests to GitHub Actions in two levels:
+
+* PR smoke gate: fast tests only, around 5–7 minutes max.
+* Nightly regression: broader suite including slower API and webhook tests.
+
+At first, I would not block releases on the full suite. I would propose this gating rule:
+
+* PR cannot merge if smoke tests fail.
+* Flaky tests cannot be ignored silently.
+* Full regression failures are reviewed daily until the team trusts the suite.
+
+Tooling decision
+
+I would use both PHPUnit Feature tests and Postman/Newman, but for different purposes.
+
+* PHPUnit Feature tests: best for backend logic, DB assertions, transactions, concurrency, factories, and webhook handling.
+* Postman/Newman: best for black-box API flow, environment variables, chaining, and external documentation for QA/devs.
+
+My main automation base would be PHPUnit because it is closer to Laravel business logic and easier to run in CI. Postman would be used for smoke flows and sharing clear API scenarios with the team.
+
+Coverage target by week 8
+
+I would commit to around 15–20% endpoint coverage, but focused on the highest-risk business flows. For 400 endpoints, that means roughly 60–80 endpoints or route actions, not randomly selected.
+
+I would rather cover 20% of routes that protect 80% of business risk than cover 60% of low-value routes.
+
+Payment webhook strategy
+
+I would never test real charges in normal CI. I would test webhooks safely by:
+
+* Using provider test mode.
+* Saving sample webhook payloads.
+* Mocking provider signatures.
+* Testing valid, invalid, duplicate, delayed, and out-of-order webhook events.
+* Verifying idempotency so the same webhook cannot credit the wallet twice.
+
+For Laravel, I would use factories and fake HTTP/payment clients where possible.
+
+What I push back on
+
+If the team asks me in week 1 to “automate all endpoints quickly,” I would say no.
+
+My reason: that creates weak tests that only check status codes and give false confidence. I would explain that the safer approach is to start with wallet, gifts, auth, and payment flows because those are the areas where bugs can cause financial loss, fraud, or production incidents.

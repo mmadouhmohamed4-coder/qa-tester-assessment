@@ -16,16 +16,40 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"qa@example.com\",\n  \"password\": \"password\"\n}"
-        },
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
         "url": {
-          "raw": "https://api.example.com/api/auth/login",
+          "raw": "{{base_url}}/api/auth/login",
           "protocol": "https",
           "host": ["api", "example", "com"],
           "path": ["api", "auth", "login"]
         },
         "description": "TODO (candidate): replace hard-coded URL/body with env vars. Capture the returned bearer token into {{auth_token}}. Add assertions for status, response schema, and that 'token' is non-empty."
       },
+      "event": [
+  {
+    "listen": "test",
+    "script": {
+      "type": "text/javascript",
+      "exec": [
+        "pm.test('Status code is 200', function () {",
+        "    pm.response.to.have.status(200);",
+        "});",
+
+        "pm.test('Response time is less than 1500ms', function () {",
+        "    pm.expect(pm.response.responseTime).to.be.below(1500);",
+        "});",
+
+        "const response = pm.response.json();",
+
+        "pm.test('Token exists', function () {",
+        "    pm.expect(response.token).to.not.be.empty;",
+        "});",
+
+        "pm.environment.set('auth_token', response.token);"
+      ]
+    }
+  }
+],
       "response": []
     },
     {

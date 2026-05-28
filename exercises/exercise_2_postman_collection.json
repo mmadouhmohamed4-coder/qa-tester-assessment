@@ -119,9 +119,12 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// TODO (candidate): add a collection-level pre-request script here that",
-          "// auto-attaches Authorization: Bearer {{auth_token}} to every request",
-          "// EXCEPT the login request itself."
+          if (!pm.request.url.toString().includes('/login')) {
+    pm.request.headers.add({
+        key: 'Authorization',
+        value: 'Bearer ' + pm.environment.get('auth_token')
+    });
+}
         ]
       }
     },
